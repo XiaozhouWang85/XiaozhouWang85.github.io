@@ -4,7 +4,7 @@ layout: default
 
   <h2>About Me</h2>
   
-![Profile]({{ site.baseurl }}/assets/profile.jpg){:class="img-responsive" height="300px"}
+![Profile]({{site.url}}/assets/profile.jpg){:class="img-responsive" height="300px"}
 
   I’m an analytics manager working in the financial services industry. I working for Oliver Wyman in London then Standard Chartered in Singapore and HSBC in Hong Kong. Although I worked on many different projects and topics throughout my career, it has always been about applying complex analytics and technology to practical business problems. 
   
