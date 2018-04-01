@@ -1,259 +1,151 @@
 ---
 layout: post
-title:  "Welcome to Jekyll!"
-date:   2018-02-18 13:21:40 +0800
-categories: jekyll update
+title:  "Deploying data science models to AWS Lambda (part 2)"
+date:   2018-02-15 13:21:40 +0800
+categories: datacience AWSLambda Deployment
 ---
 
-### How to consume API data with Python
+Before we can begin discussing how to implement a machine learning model, we need to build one. The model shown below is a fairly simple one and has fairly low predictive power. However, it uses NLTK, Scikit-learn and Pandas so serves as a good example model to implement. The data and solution were both taken from Kaggle. Here is the [competition](https://www.kaggle.com/c/spooky-author-identification) and [solution](https://www.kaggle.com/arthurtok/spooky-nlp-and-topic-modelling-tutorial). This article will only provide a very brief walkthrough of how the model is built since it is assumed the reader already knows this. If this is not the case then Kaggle contains many tutorials and worked examples that are a great learning resource.
 
-This tutorial is largely based on the following article: https://www.dataquest.io/blog/python-api-tutorial/
+#### Building a model with NLTK, Scikit-learn and Pandas
 
-First import the library used for handling HTTP communications.
+The Kaggle challenge is based around the works of horror authors Edgar Allan Poe, HP Lovecraft and Mary Shelley. The task is to identify the author when given an excerpt taken from one of their books.
 
-
-```python
-import requests
-```
-
-Use a GET request to obtain information from this API. The API returns the current location of the International Space Station. The data is returned by the requests library as a response object that contains various information.
+The first step is to import the dependent libraries.
 
 
 ```python
-resp = requests.get("https://p1l1hos9n0.execute-api.us-east-1.amazonaws.com/UAT")
+#Import dependencies
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import itertools
+from nltk.stem import WordNetLemmatizer
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix
 ```
+
+Pandas is used to read the input data and convert it into a list. Stop words (common words in English such as "the" or "a") are removed and stemming is performed (converting "running" and "ran" into "run"). Then a count vectorizer is used to convert the words into a bag of words matrix. 
 
 
 ```python
-resp.content
+#Import data from csv and store as text in a list
+train = pd.read_csv("train.csv")
+text = list(train.text.values)
+
+#Create a count vectorizer class that also applies stemming to 
+#the words in each document
+lemm = WordNetLemmatizer()
+class LemmaCountVectorizer(CountVectorizer):
+    def build_analyzer(self):
+        analyzer = super(LemmaCountVectorizer, self).build_analyzer()
+        return lambda doc: (lemm.lemmatize(w) for w in analyzer(doc))
+
+#Create object and apply to text data
+tf_vectorizer = LemmaCountVectorizer(
+    max_df=0.95,min_df=2,stop_words='english', decode_error='ignore'
+)
+tf = tf_vectorizer.fit_transform(text)
+
+#Conduct an LDA transformation on the data
+lda = LatentDirichletAllocation(n_topics=50, max_iter=5,
+                                learning_method = 'online',
+                                learning_offset = 50.,
+                                random_state = 0)
+X=lda.fit_transform(tf)
+
+#Convert author to integer
+le=LabelEncoder()
+Y=le.fit_transform(train['author'])
 ```
 
-
-
-
-    b'{"message":"Missing Authentication Token"}'
-
-
-
-Accessing the status code of the response object shows it has returned 200. The following are a list of response codes and their meaning:
-
-- 200 – everything went okay, and the result has been returned (if any)
-- 301 – the server is redirecting you to a different endpoint. This can happen when a company switches domain names, or an endpoint name is changed.
-- 401 – the server thinks you’re not authenticated. This happens when you don’t send the right credentials to access an API (we’ll talk about authentication in a later post).
-- 400 – the server thinks you made a bad request. This can happen when you don’t send along the right data, among other things.
-- 403 – the resource you’re trying to access is forbidden – you don’t have the right permissions to see it.
-- 404 – the resource you tried to access wasn’t found on the server.
-
-The data is returned as text can also be accessed from the object.
+Once the data has been transformed into a matrix format, it is split into train and test groups. This is so that cross validation can be performed on the model once it is built. Random forest is used as the classifier and once fit to the data, it is used to make predictions on the data that had been set aside for testing. The accuracy scores and confusion matrix are produced.
 
 
 ```python
-resp.content
+#Split data into test and train
+train_x, test_x, train_y, test_y = train_test_split(
+    X, Y,train_size=0.25
+)
+clf = RandomForestClassifier(n_jobs=200,min_samples_split=100,min_samples_leaf=100)
+clf.fit(train_x, train_y)
+pred=clf.predict(test_x)
+train_acc=accuracy_score(train_y, clf.predict(train_x))
+test_acc=accuracy_score(test_y, clf.predict(test_x))
+cm=confusion_matrix(test_y, clf.predict(test_x))
 ```
 
-
-
-
-    b'{"timestamp": 1508379020, "message": "success", "iss_position": {"longitude": "-176.6575", "latitude": "50.8896"}}'
-
-
-
-The second API requires a user input in order to return the data. Submitting a get request in the same manner as before leads to an error code being returned.
+Matplotlib is used to visualise the confusion matrix.
 
 
 ```python
-resp2 = requests.get("http://api.open-notify.org/iss-pass.json")
+#Print model results and confusion Matrix
+print('Train: {0:.0f}%, Test: {1:.0f}%'.format(train_acc*100, test_acc*100))
+
+plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+classes=['EAP', 'HPL', 'MWS']
+plt.title('Confusion Matrix')
+plt.colorbar()
+tick_marks = np.arange(len(classes))
+plt.xticks(tick_marks, classes, rotation=45)
+plt.yticks(tick_marks, classes)
+
+fmt = 'd'
+thresh = cm.max() / 2.
+for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+    plt.text(j, i, format(cm[i, j], fmt),
+             horizontalalignment="center",
+             color="white" if cm[i, j] > thresh else "black")
+
+plt.tight_layout()
+plt.ylabel('True label')
+plt.xlabel('Predicted label')
+plt.show()
+
+Out: Train: 53%, Test: 50%
 ```
+
+![Confusion Matrix]({{site.url}}/assets/spooky_cm.png)
+
+
+The results are fairly poor. Edgar Allen Poe can be identified a bit more reliably but the other two authors are not identified well. However, this will not stop us from using this as an example model to implement.
+
+#### Deploying the model normally
+
+After completing the model build process a number of Scikit-learn objects were created. These objects can be persisted to disk using joblib. Once the objects have been saved, they can be loaded and re-used.
 
 
 ```python
-resp2.status_code
+#Persisting Sckitlearn objects to disk
+from sklearn.externals import joblib
+joblib.dump(tf_vectorizer, 'tf_vectorizer.pkl')
+joblib.dump(lda, 'lda.pkl') 
+joblib.dump(le, 'le.pkl') 
+joblib.dump(clf, 'clf.pkl')
+
+tf_vectorizer = joblib.load('tf_vectorizer.pkl') 
+lda = joblib.load('lda.pkl') 
+le = joblib.load('le.pkl') 
+clf = joblib.load('clf.pkl') 
 ```
 
-
-
-
-    400
-
-
-
-The API requires latitude / longitdude to be provided to function
+The various objects can be linked together in a function that now takes text as input and returns a prediction
 
 
 ```python
-#Hong Kong
-Lat=22.3964
-Lon=114.1095
+def lda_pipeline(inlist):
+    tf_ex=tf_vectorizer.transform(inlist)
+    lda_ex=lda.transform(tf_ex)
+    clf_ex=clf.predict(lda_ex)
+    return list(le.inverse_transform(clf_ex))
+lda_pipeline(text[:3])
+
+Out:['EAP', 'EAP', 'EAP']
 ```
 
-A clumsy way of using this information
-
-
-```python
-resp2 = requests.get("http://api.open-notify.org/iss-pass.json?lat="+str(Lat)+"&lon="+str(Lon))
-resp2.status_code
-```
-
-
-
-
-    200
-
-
-
-A far more elegant way is provided by requests library to pass parameters to the API. Create a dictionary of all variables and then pass this to get call.
-
-
-```python
-Add='Flat E, Floor 3, Block 9, Site 2, whampoa garden'
-key='AIzaSyCD7EGh8kFqy7Oh8GrmUn6HJAn1q70aQpY'
-```
-
-
-```python
-parameters = {"address": Add, "key": key}
-resp2 = requests.get("https://maps.googleapis.com/maps/api/geocode/json", params=parameters)
-```
-
-
-```python
-print(resp2.text)
-```
-
-    {
-       "results" : [
-          {
-             "address_components" : [
-                {
-                   "long_name" : "7",
-                   "short_name" : "7",
-                   "types" : [ "street_number" ]
-                },
-                {
-                   "long_name" : "Tak On Street",
-                   "short_name" : "Tak On St",
-                   "types" : [ "route" ]
-                },
-                {
-                   "long_name" : "Hung Hom",
-                   "short_name" : "Hung Hom",
-                   "types" : [ "neighborhood", "political" ]
-                },
-                {
-                   "long_name" : "Kowloon",
-                   "short_name" : "Kowloon",
-                   "types" : [ "administrative_area_level_1", "political" ]
-                },
-                {
-                   "long_name" : "Hong Kong",
-                   "short_name" : "HK",
-                   "types" : [ "country", "political" ]
-                }
-             ],
-             "formatted_address" : "7 Tak On St, Hung Hom, Hong Kong",
-             "geometry" : {
-                "location" : {
-                   "lat" : 22.3040823,
-                   "lng" : 114.1888033
-                },
-                "location_type" : "ROOFTOP",
-                "viewport" : {
-                   "northeast" : {
-                      "lat" : 22.3054312802915,
-                      "lng" : 114.1901522802915
-                   },
-                   "southwest" : {
-                      "lat" : 22.3027333197085,
-                      "lng" : 114.1874543197085
-                   }
-                }
-             },
-             "place_id" : "ChIJg0JlBeAABDQReVxuolVRwLM",
-             "types" : [ "establishment", "point_of_interest" ]
-          }
-       ],
-       "status" : "OK"
-    }
-    
-    
-
-
-```python
-import json
-```
-
-
-```python
-resp2.json()
-```
-
-
-
-
-    {'message': 'success',
-     'request': {'altitude': 100,
-      'datetime': 1508388038,
-      'latitude': 22.3964,
-      'longitude': 114.1095,
-      'passes': 5},
-     'response': [{'duration': 228, 'risetime': 1508401611},
-      {'duration': 626, 'risetime': 1508407239},
-      {'duration': 488, 'risetime': 1508413077},
-      {'duration': 412, 'risetime': 1508455347},
-      {'duration': 632, 'risetime': 1508461001}]}
-
-
-
-Store results into an object and parse it
-
-
-```python
-loc_j=resp2.json()
-```
-
-
-```python
-loc_j.keys()
-```
-
-
-
-
-    dict_keys(['message', 'request', 'response'])
-
-
-
-
-```python
-count=0
-for iss_pass in loc_j['response']:
-    count+=1
-    print('Pass '+str(count)+', Duration:'+str(iss_pass['duration'])+', Rise time: '+ str(iss_pass['risetime']))
-```
-
-    Pass 1, Duration:228, Rise time: 1508401611
-    Pass 2, Duration:626, Rise time: 1508407239
-    Pass 3, Duration:488, Rise time: 1508413077
-    Pass 4, Duration:412, Rise time: 1508455347
-    Pass 5, Duration:632, Rise time: 1508461001
-    
-
-
-```python
-
-```
-
-
-{% highlight python %}
-def print_hi(name)
-  puts "Hi, #{name}"
-end
-print_hi('Tom')
-#=> prints 'Hi, Tom' to STDOUT.
-{% endhighlight %}
-
-Check out the [Jekyll docs][jekyll-docs] for more info on how to get the most out of Jekyll. File all bugs/feature requests at [Jekyll’s GitHub repo][jekyll-gh]. If you have questions, you can ask them on [Jekyll Talk][jekyll-talk].
-
-[jekyll-docs]: https://jekyllrb.com/docs/home
-[jekyll-gh]:   https://github.com/jekyll/jekyll
-[jekyll-talk]: https://talk.jekyllrb.com/
+This function can now be easily deployed using Flask or Django if deploying in a traditional way. The easiest tutorial I have seen on this is [here](https://impythonist.wordpress.com/2015/07/12/build-an-api-under-30-lines-of-code-with-python-and-flask/). This concludes part 2 of this series. In the next article, we will see how AWS Lambda can be used to turn a very simple function (not the model we developed here) into an API.

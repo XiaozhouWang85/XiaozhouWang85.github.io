@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Deploying data science models to AWS Lambda (part 1)"
-date:   2018-02-15 13:21:40 +0800
+date:   2018-01-15 13:21:40 +0800
 categories: datacience AWSLambda Deployment
 ---
 
