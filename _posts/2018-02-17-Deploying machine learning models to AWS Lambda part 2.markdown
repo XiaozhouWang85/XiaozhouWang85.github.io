@@ -1,8 +1,8 @@
 ---
 layout: post
-title:  "Deploying data science models to AWS Lambda (part 2)"
+title:  "Deploying machine learning models to AWS Lambda (part 2)"
 date:   2018-02-15 13:21:40 +0800
-categories: datacience AWSLambda Deployment
+categories: datascience machinelearning AWSLambda Deployment
 ---
 
 Before we can begin discussing how to implement a machine learning model, we need to build one. The model shown below is a fairly simple one and has fairly low predictive power. However, it uses NLTK, Scikit-learn and Pandas so serves as a good example model to implement. The data and solution were both taken from Kaggle. Here is the [competition](https://www.kaggle.com/c/spooky-author-identification) and [solution](https://www.kaggle.com/arthurtok/spooky-nlp-and-topic-modelling-tutorial). This article will only provide a very brief walkthrough of how the model is built since it is assumed the reader already knows this. If this is not the case then Kaggle contains many tutorials and worked examples that are a great learning resource.
