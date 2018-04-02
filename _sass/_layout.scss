@@ -16,7 +16,7 @@ h3 {
 }
 h1 {
 	color: $main;
-	font-size: 2.5em;
+	font-size: 2em;
 	a,
 	a:visited {
 		text-decoration: none;
@@ -109,4 +109,7 @@ aside {
 footer {
 	text-align: center;
 	padding: 40px;
+}
+pre {
+    white-space: pre-wrap;
 }
