@@ -110,7 +110,7 @@ plt.show()
 Out: Train: 53%, Test: 50%
 ```
 
-![Confusion Matrix]({{site.url}}/assets/spooky_cm.png)
+![Confusion Matrix]({{site.url}}/assets/spooky_cm.png){:class="img-responsive" width="50%"}
 
 
 The results are fairly poor. Edgar Allen Poe can be identified a bit more reliably but the other two authors are not identified well. However, this will not stop us from using this as an example model to implement.
