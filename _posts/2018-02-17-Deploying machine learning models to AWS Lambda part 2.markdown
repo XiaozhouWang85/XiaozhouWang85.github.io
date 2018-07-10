@@ -127,7 +127,7 @@ plot_confusion_matrix(cm, classes=['EAP', 'HPL', 'MWS'],
 plt.show()
 ```
 
-![Confusion Matrix]({{site.url}}/assets/spooky_cm.png){:class="img-responsive" width="50%"}
+![Confusion Matrix]({{site.url}}/assets/spooky_cm.png){:class="img-responsive" width="75%"}
 
 The results are fairly good, perhaps surprisingly so. By using count vectorizer with ngrams, vocabulary and style of phrasing will be captured. Therefore it is not surprising that this will be able to predict the author of the text.
 
