@@ -2,7 +2,7 @@
 layout: post
 comments: true
 title:  "Deploying machine learning models to AWS Lambda (part 4)"
-date:   2018-04-14 09:56:70 +0800
+date:   2018-04-15 14:26:40 +0800
 categories: datascience machinelearning AWSLambda Deployment
 ---
 
