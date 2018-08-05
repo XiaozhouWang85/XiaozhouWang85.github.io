@@ -1,5 +1,6 @@
 ---
 layout: post
+comments: true
 title:  "Deploying machine learning models to AWS Lambda (part 2)"
 date:   2018-02-15 13:21:40 +0800
 categories: datascience machinelearning AWSLambda Deployment

@@ -1,12 +1,14 @@
 ---
 layout: post
 comments: true
-title:  "Deploying machine learning models to AWS Lambda (part 3)"
-date:   2018-03-02 14:26:40 +0800
+title:  "Deploying machine learning models to AWS Lambda (part 4)"
+date:   2018-04-14 09:56:70 +0800
 categories: datascience machinelearning AWSLambda Deployment
 ---
 
 The model that was developed in the last article is tricky to implement on AWS Lambda and I will discuss why later in this tutorial. To start with, I'll run through how to set up an AWS account and how to use AWS Lambda. As before, where others have already written good articles, I will link rather than re-create the content.
+
+https://kenophobio.github.io/2017-01-10/deep-learning-jupyter-ec2/
 
 #### Why use cloud / AWS?
 Amazon, Google, Microsoft and others all offer "cloud" services. In a nutshell, this means renting computing power in some format. More and more, applications are also introduced as part of the package. For large companies, this means they can outsource activities such as managing servers to the cloud provider who can typically do it far more efficiently. For individuals and startups, it allows them to rent computing power that they would have difficulty purchasing. For both, it allows 
