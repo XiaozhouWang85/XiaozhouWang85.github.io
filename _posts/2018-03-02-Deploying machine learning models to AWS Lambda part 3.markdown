@@ -1,5 +1,6 @@
 ---
 layout: post
+comments: true
 title:  "Deploying machine learning models to AWS Lambda (part 3)"
 date:   2018-03-02 14:26:40 +0800
 comments: true
